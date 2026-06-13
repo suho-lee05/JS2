@@ -419,35 +419,58 @@ async function reserveSpecificSeat_3(seatId) {
 
 async function findAndReserveSeat() {
     stopFlag = false;
+
+    // ✅ 1열 A구역 + B구역
+    const ROOM_IDS = [102, 101];
+
     while (!stopFlag) {
-        document.getElementById("status").innerText = "🔄 빈자리 탐색 중...";
-        //alert("🔄무한 루프 시작(취소하려면 예약중지 버튼을 눌러주세요)");
+        document.getElementById("status").innerText = "🔄 1열 A/B구역 빈자리 탐색 중...";
 
         try {
-            let response = await fetch(`https://library.konkuk.ac.kr/pyxis-api/1/api/rooms/${102}/seats`, {
-                method: "GET",
-                headers: { 
-                    "Content-Type": "application/json;charset=UTF-8",
-                    "pyxis-auth-token": USER_TOKEN
-                }
-            });
+            let availableSeats = [];
 
-            let data = await response.json();
-            let availableSeats = data.data.list.filter(seat => !seat.isOccupied && seat.isActive);
-            
+            // ✅ 102, 101 두 구역 모두 조회
+            for (const ROOM_ID of ROOM_IDS) {
+                const response = await fetch(`https://library.konkuk.ac.kr/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json;charset=UTF-8",
+                        "pyxis-auth-token": USER_TOKEN
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.list) {
+                    const roomAvailableSeats = data.data.list
+                        .filter(seat => !seat.isOccupied && seat.isActive)
+                        .map(seat => ({
+                            ...seat,
+                            roomId: ROOM_ID
+                        }));
+
+                    availableSeats.push(...roomAvailableSeats);
+                }
+            }
+
             if (availableSeats.length === 0) {
-                document.getElementById("status").innerText = "🔄 빈자리 없음, 다시 탐색 중...";
-                await new Promise(resolve => setTimeout(resolve, 200));//빈자리탐색 .5초로 바꿈
+                document.getElementById("status").innerText = "🔄 1열 A/B구역 빈자리 없음, 다시 탐색 중...";
+                await new Promise(resolve => setTimeout(resolve, 200));
                 continue;
             }
 
-            let targetSeat = availableSeats[0];
-            document.getElementById("status").innerText = `🎯 빈자리 발견! 좌석 ${targetSeat.id} 예약 시도...`;
+            // ✅ 102에서 먼저 찾고, 없으면 101에서 찾은 좌석 예약
+            const targetSeat = availableSeats[0];
 
+            document.getElementById("status").innerText =
+                `🎯 빈자리 발견! Room ${targetSeat.roomId}, 좌석 ${targetSeat.code}번 예약 시도...`;
+
+            // ✅ 예약은 seat.code가 아니라 실제 seat.id로 해야 함
             await reserveSpecificSeat(targetSeat.id);
-            
+
         } catch (error) {
-            document.getElementById("status").innerText = "❌ 오류 발생!";
+            document.getElementById("status").innerText = "❌ 1열 무한루프 오류 발생!";
+            console.error("1열 무한루프 오류:", error);
         }
 
         await new Promise(resolve => setTimeout(resolve, 10000));
