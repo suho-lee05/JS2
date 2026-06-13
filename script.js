@@ -424,7 +424,7 @@ async function findAndReserveSeat() {
         //alert("🔄무한 루프 시작(취소하려면 예약중지 버튼을 눌러주세요)");
 
         try {
-            let response = await fetch(`https://library.konkuk.ac.kr/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+            let response = await fetch(`https://library.konkuk.ac.kr/pyxis-api/1/api/rooms/${102}/seats`, {
                 method: "GET",
                 headers: { 
                     "Content-Type": "application/json;charset=UTF-8",
