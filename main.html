@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>좌석 예약 - Seat Ninja</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="hero">
+            <span class="chip">Dashboard</span>
+            <h1>좌석 예약을 더 빠르게</h1>
+            <p class="lead">원하는 좌석 예약, 곧 비는 좌석 확인, 내 정보 조회까지 한 화면에서 처리하세요.</p>
+        </header>
+
+        <section class="card-grid">
+            <div class="card col-7">
+                <h2>📚 도서관 좌석 예약</h2>
+                <h3>시험기간, 더 빠르게 원하는 좌석으로</h3>
+                <button class="btn btn-primary" onclick="startSeatNinja(1)">1열람실 특정 좌석 배석</button>
+                <button class="btn btn-primary" onclick="startSeatNinja(2)">2열람실 특정 좌석 배석</button>
+                <button class="btn btn-primary" onclick="startSeatNinja(3)">3열람실 특정 좌석 배석</button>
+                <button class="btn btn-primary" onclick="startSeatNinja()">⭐ 무한 루프 빈자리 예약 1열</button>
+                <button class="btn btn-primary" onclick="startSeatNinja(4)">⭐ 무한 루프 빈자리 예약 2열</button>
+                <button class="btn btn-secondary" onclick="stopLoop()">예약 중지</button>
+                <p id="status" class="status-message"></p>
+            </div>
+
+            <div class="card col-5">
+                <h2>👤 내 정보</h2>
+                <p class="muted">현재 좌석 상태와 QR, 연장 정보는 내 정보 페이지에서 확인할 수 있습니다.</p>
+                <button class="btn btn-info" onclick="goToMyInfo()">내 정보 보기</button>
+                <div id="seatMapContainer"></div>
+            </div>
+
+            <div class="card col-8">
+                <h2>⏰ 곧 비는 좌석</h2>
+                <p class="muted">클릭 가능한 태그는 즉시 예약이 가능합니다.</p>
+                <div id="soonToBeAvailableSeats">🔄 로딩 중...</div>
+                <button class="btn btn-info" onclick="fetchSoonToBeAvailableSeats()">새로고침</button>
+            </div>
+
+            <div class="card col-4">
+                <h2>계정</h2>
+                <p class="muted">작업을 마치면 안전하게 로그아웃하세요.</p>
+                <button class="btn btn-danger" onclick="logout()">🚪 로그아웃</button>
+            </div>
+        </section>
+
+        <div id="seatModal" class="modal">
+            <div class="modal-inner">
+                <span onclick="closeSeatModal()" class="modal-close">&times;</span>
+                <img id="seatModalImage" src="" alt="좌석도 확대">
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; Made by Kim Guardian</p>
+        </footer>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem("USER_TOKEN");
+            const userId = localStorage.getItem("USER_ID");
+
+            if (!token || !userId) return;
+
+            try {
+                const res = await fetch("https://library.konkuk.ac.kr/pyxis-api/1/api/seat-charges", {
+                    headers: {
+                        "Content-Type": "application/json;charset=UTF-8",
+                        "pyxis-auth-token": token
+                    }
+                });
+
+                const data = await res.json();
+                if (data.success && data.data.totalCount > 0) {
+                    const name = data.data.list[0].patron.name;
+
+                    await fetch("https://login-proxy-server-production.up.railway.app/api/log-user-info", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            loginId: userId,
+                            name: name
+                        })
+                    });
+                }
+            } catch (err) {
+                console.error("❌ 사용자 이름 로깅 실패:", err);
+            }
+
+            fetchSoonToBeAvailableSeats();
+            setInterval(fetchSoonToBeAvailableSeats, 6 * 10000);
+        });
+
+        function showSeatMap(zone) {
+            const container = document.getElementById("seatMapContainer");
+            let imagePath = "";
+            let altText = "";
+
+            if (zone === "a") {
+                imagePath = "/img/1열람실A구역좌석도.png";
+                altText = "1열람실 A구역 좌석도";
+            } else if (zone === "b") {
+                imagePath = "/img/1열람실B구역좌석도.png";
+                altText = "1열람실 B구역 좌석도";
+            }
+
+            container.innerHTML = `
+                <img src="${imagePath}" alt="${altText}" style="width: 100%; max-width: 800px; border-radius: 12px; cursor: zoom-in;" onclick="openSeatModal('${imagePath}')">
+            `;
+        }
+
+        function openSeatModal(imageSrc) {
+            const modal = document.getElementById("seatModal");
+            const modalImage = document.getElementById("seatModalImage");
+            modal.style.display = "block";
+            modalImage.src = imageSrc;
+        }
+
+        function closeSeatModal() {
+            document.getElementById("seatModal").style.display = "none";
+        }
+    </script>
+</body>
+</html>

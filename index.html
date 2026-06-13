@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - Seat Ninja</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="hero">
+            <span class="chip">Seat Ninja</span>
+            <h1>빠르고 깔끔한 도서관 좌석 예약</h1>
+            <p class="lead">계정 정보를 입력하고 바로 좌석 예약을 시작하세요.</p>
+        </header>
+
+        <div id="notice" class="notice-banner">
+            ⚠️ 도메인 변경 안내
+
+			현재 서버 이전 및 도메인 변경이 진행 중입니다.
+
+			기존 주소(seatninja.shop)는 곧 접속이 중단될 예정이며,
+			4/4일 이후 아래 주소를 이용해주세요.
+
+			👉 seatninja.store
+
+			※ 접속이 느리거나 오류가 발생할 경우,
+			잠시 후 다시 시도해주시면 정상 이용 가능합니다.
+        </div>
+
+        <section class="card col-5" style="max-width: 480px; margin: 0 auto;">
+            <h2>❄️ 로그인</h2>
+            <p class="muted">아이디와 비밀번호를 입력해주세요.</p>
+
+            <div class="form-field">
+                <label for="userId">아이디</label>
+                <input type="text" id="userId" class="input-field" placeholder="아이디 입력">
+            </div>
+
+            <div class="form-field">
+                <label for="userPw">비밀번호</label>
+                <input type="password" id="userPw" class="input-field" placeholder="비밀번호 입력">
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="login()">로그인</button>
+
+            <div class="options">
+                <p><a href="https://login-proxy-server-production.up.railway.app/forgot-password">비밀번호를 잊으셨나요?</a></p>
+                <p>계정이 없나요? <a href="#">회원가입</a></p>
+            </div>
+
+            <p id="status" class="status-message"></p>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

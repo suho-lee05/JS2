@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 정보 - Seat Ninja</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="hero">
+            <span class="chip">My Info</span>
+            <h1>내 좌석 상태와 QR 확인</h1>
+            <p class="lead">연장, 배석 해제, 마법 버튼까지 한 번에 관리할 수 있습니다.</p>
+        </header>
+
+        <section class="card-grid">
+            <div class="card col-7">
+                <h2>📌 내 좌석 정보</h2>
+                <div class="info-list">
+                    <div class="info-item"><strong>현재 좌석</strong><span id="userSeat">조회 중...</span></div>
+                    <div class="info-item"><strong>잔여 시간</strong><span id="remainingTime">조회 중...</span></div>
+                    <div class="info-item"><strong>연장 가능 시간</strong><span id="renewTime">조회 중...</span></div>
+                    <div class="info-item"><strong>연장 가능 횟수</strong><span id="renewalCount">조회 중...</span></div>
+                </div>
+            </div>
+
+            <div class="card qr-card col-5">
+                <h2>📌 QR</h2>
+                <p id="qrStatus" class="muted">QR 코드 로딩 중...</p>
+                <div id="qrCode"></div>
+            </div>
+
+            <div class="card col-12">
+                <div class="row">
+                    <div class="half-card">
+                        <h2>🔄 좌석 연장</h2>
+                        <button class="btn btn-primary" onclick="renewSeat()">연장하기</button>
+                        <p id="renewStatus" class="status-message"></p>
+                    </div>
+                    <div class="half-card">
+                        <h2>❌ 배석 해제</h2>
+                        <button class="btn btn-danger" onclick="cancelReservation()">배석 해제</button>
+                        <p id="cancelStatus" class="status-message"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card col-12">
+                <div id="statusBox">
+                    📌 현재 도서관의 좌석 이용 정책은 "하루 12시간 제한"으로 안내되고 있습니다. 하지만 이 제한은 <strong>계정당 누적 이용 시간 기준이 아닌 단일 예약 건 기준</strong>으로 적용되어, 예약 취소 후 재예약 시 사실상 시간 제한 없이 이용이 가능합니다.
+                </div>
+                <button class="btn btn-primary" onclick="magicRebook()">✨ 마법 버튼 (정책 우회)</button>
+                <p id="status" class="status-message"></p>
+            </div>
+
+            <div class="card col-12">
+                <button class="btn btn-secondary" onclick="goBack()">⬅ 뒤로 가기</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>즐겨찾기 좌석</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="favorites.js" defer></script>
+</head>
+<body>
+    <main class="app-shell">
+        <header class="hero">
+            <span class="chip">Favorites</span>
+            <h1>자주 쓰는 좌석을 바로 예약</h1>
+            <p class="lead">클릭 한 번으로 배석 확정까지 이어지는 빠른 즐겨찾기 화면입니다.</p>
+        </header>
+
+        <section class="card-grid">
+            <div class="card col-6">
+                <h2>⭐ 즐겨찾기 좌석 1열</h2>
+                <p class="muted">원하는 좌석을 선택하면 즉시 예약을 시도합니다.</p>
+                <div id="favoritesContainer" class="favorites-list">불러오는 중...</div>
+            </div>
+
+            <div class="card col-6">
+                <h2>⭐ 즐겨찾기 좌석 3열</h2>
+                <p class="muted">원하는 좌석을 선택하면 즉시 예약을 시도합니다.</p>
+                <div id="favoritesContainer_3" class="favorites-list">불러오는 중...</div>
+            </div>
+
+            <div class="card col-6">
+                <h2>⭐ 웅대 즐겨찾기 좌석 1열</h2>
+                <p class="muted">웅대용 1열 좌석 바로 예약</p>
+                <div id="Woong_1" class="favorites-list">불러오는 중...</div>
+            </div>
+
+            <div class="card col-6">
+                <h2>⭐ 웅대 즐겨찾기 좌석 3열</h2>
+                <p class="muted">웅대용 3열 좌석 바로 예약</p>
+                <div id="Woong_3" class="favorites-list">불러오는 중...</div>
+            </div>
+
+            <div class="card col-12">
+                <button class="btn btn-secondary" onclick="goBack()">⬅ 뒤로 가기</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function goBack() {
+            window.location.href = "main.html";
+        }
+    </script>
+</body>
+</html>
