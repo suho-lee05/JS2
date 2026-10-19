@@ -61,7 +61,7 @@
     </main>
 
     <script src="script.js"></script>
-    <script>
+    <!-- <script>
         document.addEventListener("DOMContentLoaded", async () => {
             const token = localStorage.getItem("USER_TOKEN");
             const userId = localStorage.getItem("USER_ID");
@@ -127,6 +127,24 @@
         function closeSeatModal() {
             document.getElementById("seatModal").style.display = "none";
         }
-    </script>
+    </script> -->
+    
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem("USER_TOKEN");
+
+    if (!token) {
+        console.warn("로그인 정보가 없습니다.");
+        return;
+    }
+
+    // 좌석 현황만 조회
+    fetchSoonToBeAvailableSeats();
+
+    // 60초마다 갱신
+    setInterval(fetchSoonToBeAvailableSeats, 60000);
+});
+</script>
+
 </body>
 </html>

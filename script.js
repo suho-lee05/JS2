@@ -8,7 +8,7 @@ let myReservationId = null;  // 예약된 좌석 ID 저장
 let seatNumber = null;
 
 // 모든 학교 API 요청은 Cloudflare Worker로 전송합니다.
-const WORKER_API_URL = "https://login-proxy-server.suhoi6791.workers.dev";
+const WORKER_API_URL = "https://login-proxy-server.suhoi6791.workers.dev"; // 실제 배포된 Worker URL로 변경
 const API_MODE_KEY = "SEATNINJA_API_MODE";
 localStorage.removeItem(API_MODE_KEY); // 과거 DIRECT 설정 무효화
 function getApiMode() { return "WORKER"; }
@@ -26,7 +26,9 @@ async function fetchWorkerSeats(roomId) {
         headers: schoolAuthHeaders()
     });
     if (!response.ok) throw new Error(`좌석 조회 오류: ${response.status}`);
-    return response.json();
+    const data = await response.json();
+    if (data.testMode) throw new Error("Worker가 테스트 좌석 데이터를 반환했습니다. 실제 좌석 조회가 불가능합니다.");
+    return data;
 }
 async function readJsonSafely(response) {
     try {
@@ -45,11 +47,21 @@ async function login() {
     const statusEl = document.getElementById("status");
     if (!USER_ID || !password) { statusEl.innerText = "❌ 아이디와 비밀번호를 입력하세요!"; return; }
     try {
-        const response = await fetch(`${WORKER_API_URL}/api/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json;charset=UTF-8" },
-            body: JSON.stringify({ loginId: USER_ID, password })
-        });
+        const response = await fetch(
+    "https://library.konkuk.ac.kr/pyxis-api/api/login",
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json;charset=UTF-8"
+        },
+        body: JSON.stringify({
+            loginId: USER_ID,
+            password,
+            isFamilyLogin: false,
+            isMobile: true
+        })
+    }
+);
         const data = await readJsonSafely(response);
         if (!response.ok || !data.success || !data.data?.accessToken) {
             statusEl.innerText = data.message || "❌ 로그인 실패";
@@ -145,7 +157,9 @@ async function getUserInfo() {
 
     try {
         const response = await fetch(`${WORKER_API_URL}/api/my-seat`, {
-            headers: schoolAuthHeaders()
+            method: "POST",
+            headers: { "Content-Type": "application/json;charset=UTF-8" },
+            body: JSON.stringify({ token: USER_TOKEN, loginId: localStorage.getItem("USER_ID") })
         });
         if (!response.ok) throw new Error(`내 좌석 조회 실패: ${response.status}`);
 
@@ -231,7 +245,7 @@ async function reserveSpecificSeat(seatId) {
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
-            body: JSON.stringify({ seatId: seatId })
+            body: JSON.stringify({ token: USER_TOKEN, seatId: seatId })
         });
 
         let reserveData = await response.json();
@@ -259,7 +273,7 @@ async function reserveSpecificSeat_2(seatId) {
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
-            body: JSON.stringify({ seatId: parseInt(seatId) + 2607 })
+            body: JSON.stringify({ token: USER_TOKEN, seatId: parseInt(seatId) + 2607 })
 
         });
         //안녕하세요
@@ -290,7 +304,7 @@ async function reserveSpecificSeat_3(seatId) {
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
-            body: JSON.stringify({ seatId: parseInt(seatId) + 2729 })
+            body: JSON.stringify({ token: USER_TOKEN, seatId: parseInt(seatId) + 2729 })
 
         });
 
@@ -335,6 +349,7 @@ async function findAndReserveSeat() {
 
                 if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
                 const data = await response.json();
+                if (data.testMode) throw new Error("테스트 좌석 데이터로 자동 예약할 수 없습니다.");
 
                 if (data.success && data.data && Array.isArray(data.data.list)) {
                     const roomAvailableSeats = data.data.list
@@ -389,6 +404,7 @@ async function findAndReserveSeat2() {
 
             if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
             let data = await response.json();
+            if (data.testMode) throw new Error("테스트 좌석 데이터입니다.");
             if (!Array.isArray(data.data?.list)) throw new Error("좌석 응답 오류");
             let availableSeats = data.data.list.filter(seat => !seat.isOccupied && seat.isActive);
 
@@ -423,7 +439,7 @@ async function confirmSeat(reservationId, seatId) {
     try {
         const response = await fetch(`${WORKER_API_URL}/api/confirm-seat`, {
             method: "POST", headers: schoolAuthHeaders(),
-            body: JSON.stringify({ reservationId })
+            body: JSON.stringify({ token: localStorage.getItem("USER_TOKEN"), reservationId, seatId, loginId: localStorage.getItem("USER_ID") })
         });
 
         const data = await readJsonSafely(response);
@@ -470,6 +486,7 @@ async function cancelReservation() {
                 "pyxis-auth-token": USER_TOKEN
             },
             body: JSON.stringify({
+                "token": USER_TOKEN,
                 "reservationId": myReservationId,  // ✅ 예약된 좌석 ID
                 "smufMethodCode": "MOBILE"  // ✅ 모바일에서 해제 요청
             })
@@ -506,7 +523,7 @@ async function renewSeat() {
     try {
         const response = await fetch(`${WORKER_API_URL}/api/renew-seat`, {
             method: "POST", headers: schoolAuthHeaders(),
-            body: JSON.stringify({ reservationId: myReservationId })
+            body: JSON.stringify({ token: USER_TOKEN, reservationId: myReservationId, seatId: seatNumber, loginId: localStorage.getItem("USER_ID") })
         });
 
         const data = await readJsonSafely(response);
@@ -552,6 +569,7 @@ async function fetchSeatStatus() {
 
             if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
             let data = await response.json();
+            if (data.testMode) throw new Error("테스트 좌석 데이터입니다.");
             if (!Array.isArray(data.data?.list)) throw new Error("좌석 응답 오류");
             let seats = data.data.list;
 
@@ -602,6 +620,7 @@ async function magicRebook() {
                 "pyxis-auth-token": USER_TOKEN
             },
             body: JSON.stringify({
+                token: USER_TOKEN,
                 reservationId: myReservationId,
                 smufMethodCode: "MOBILE"
             })
@@ -729,6 +748,7 @@ async function fetchSoonToBeAvailableSeats() {
 
             if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
             const data = await response.json();
+            if (data.testMode) throw new Error("테스트 좌석 데이터입니다.");
             if (data.success && Array.isArray(data.data?.list)) {
                 const seats = data.data.list;
                 // ✅ 칸막이석 필터링: 24~131번
