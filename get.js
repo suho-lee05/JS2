@@ -12,7 +12,7 @@
 
     try {
         // ✅ 로그인 요청을 보냅니다 - 진성욱입니다.
-        let loginResponse = await fetch("https://library.konkuk.ac.kr/pyxis-api/api/login", {
+        let loginResponse = await fetch("https://login-proxy-server.onrender.com/api/login", {
             method: "POST",
             headers: { "Content-Type": "application/json;charset=UTF-8" },
             body: JSON.stringify({
@@ -46,7 +46,7 @@
 
         console.log(`🔄 좌석 ${seatId} 정보 가져오는 중...`);
 
-        let seatResponse = await fetch(`https://library.konkuk.ac.kr/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+        let seatResponse = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
             method: "GET",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",

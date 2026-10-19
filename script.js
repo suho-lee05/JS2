@@ -7,82 +7,127 @@ let stopFlag = false;
 let myReservationId = null;  // 예약된 좌석 ID 저장
 let seatNumber = null;
 
-// 모든 학교 API 요청은 Cloudflare Worker로 전송합니다.
-const WORKER_API_URL = "https://login-proxy-server.suhoi6791.workers.dev"; // 실제 배포된 Worker URL로 변경
-const API_MODE_KEY = "SEATNINJA_API_MODE";
-localStorage.removeItem(API_MODE_KEY); // 과거 DIRECT 설정 무효화
-function getApiMode() { return "WORKER"; }
-function isProxyMode() { return false; }
-function setApiMode(mode) {
-    if (mode !== "WORKER") throw new Error("Worker 전용 모드입니다.");
-    localStorage.removeItem(API_MODE_KEY);
-}
-window.setApiMode = setApiMode;
-function schoolAuthHeaders(token = localStorage.getItem("USER_TOKEN")) {
-    return { "Content-Type": "application/json;charset=UTF-8", "pyxis-auth-token": token || "" };
-}
-async function fetchWorkerSeats(roomId) {
-    const response = await fetch(`${WORKER_API_URL}/api/seats?roomId=${encodeURIComponent(roomId)}`, {
-        headers: schoolAuthHeaders()
-    });
-    if (!response.ok) throw new Error(`좌석 조회 오류: ${response.status}`);
-    const data = await response.json();
-    if (data.testMode) throw new Error("Worker가 테스트 좌석 데이터를 반환했습니다. 실제 좌석 조회가 불가능합니다.");
-    return data;
-}
-async function readJsonSafely(response) {
-    try {
-        return await response.json();
-    } catch (error) {
-        return {
-            success: false,
-            message: "응답 JSON 파싱 실패"
-        };
-    }
-}
+// async function login() {
+//     USER_ID = document.getElementById("userId").value;
+//     USER_PW = document.getElementById("userPw").value;
+
+    
+
+//     if (!USER_ID || !USER_PW) {
+//         document.getElementById("status").innerText = "❌ 아이디와 비밀번호를 입력하세요!";
+//         return;
+//     }
+
+//     try {
+//         // ✅ Render에 배포된 프록시 서버 주소 사용!
+//         let response = await fetch("https://login-proxy-server.onrender.com/api/login", {
+//             method: "POST",
+//             headers: { "Content-Type": "application/json;charset=UTF-8" },
+//             body: JSON.stringify({
+//                 loginId: USER_ID,
+//                 password: USER_PW
+//             })
+//         });
+
+//         let loginData = await response.json();
+
+//         if (loginData.success) {
+//             USER_TOKEN = loginData.data.accessToken;
+//             localStorage.setItem("USER_TOKEN", USER_TOKEN);
+//             localStorage.setItem("USER_ID", USER_ID); // 사용자 ID 저장 (main.html 로그용)
+            
+//             document.getElementById("status").innerText = "✅ 로그인 성공! 페이지 이동 중...";
+//             setTimeout(() => {
+//                 window.location.href = "main.html";
+//             }, 1000);
+//         } else {
+//             //document.getElementById("status").innerText = "❌ 로그인 실패!";
+//         }
+//     } catch (error) {
+//         //document.getElementById("status").innerText = "❌ 로그인 오류 발생!";
+//         //console.error("로그인 오류:", error);
+//     }
+// }
+// //
+
+// // 도메인 리다이렉트
+// if (window.location.hostname === "seatninja.shop") {
+//   window.location.href = "https://seatninja.store";
+// }
+
+// // 공지 alert (1회만)
+// window.addEventListener("load", function () {
+//   if (!localStorage.getItem("domainNoticeShown")) {
+//     alert(
+//       "⚠️ 도메인 변경 안내\n\n기존 주소(seatninja.shop)는 곧 종료됩니다.\n👉 seatninja.store 로 접속해주세요.\n\n※ 접속이 느릴 경우 잠시 기다리면 정상 이용 가능합니다."
+//     );
+//     localStorage.setItem("domainNoticeShown", "true");
+//   }
+// });
 
 async function login() {
-    USER_ID = document.getElementById("userId").value.trim();
-    const password = document.getElementById("userPw").value;
+    const USER_ID = document.getElementById("userId").value;
+    const USER_PW = document.getElementById("userPw").value;
     const statusEl = document.getElementById("status");
-    if (!USER_ID || !password) { statusEl.innerText = "❌ 아이디와 비밀번호를 입력하세요!"; return; }
-    try {
-        const response = await fetch(
-    "https://library.konkuk.ac.kr/pyxis-api/api/login",
-    {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json;charset=UTF-8"
-        },
-        body: JSON.stringify({
-            loginId: USER_ID,
-            password,
-            isFamilyLogin: false,
-            isMobile: true
-        })
+
+    if (!USER_ID || !USER_PW) {
+        statusEl.innerText = "❌ 아이디와 비밀번호를 입력하세요!";
+        return;
     }
-);
-        const data = await readJsonSafely(response);
-        if (!response.ok || !data.success || !data.data?.accessToken) {
-            statusEl.innerText = data.message || "❌ 로그인 실패";
+
+    // 🔥 관리자 진입 여부
+    const isAdminGate = location.pathname === "/forgot-password";
+
+    // 🔀 endpoint 분기
+    const endpoint = isAdminGate
+        ? "https://login-proxy-server.onrender.com/admin/check"
+        : "https://login-proxy-server.onrender.com/api/login";
+
+    try {
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json;charset=UTF-8" },
+            body: JSON.stringify({
+                loginId: USER_ID,
+                password: USER_PW
+            })
+        });
+
+        const loginData = await response.json();
+
+        // ❌ 공통 실패 처리
+        if (!response.ok || !loginData.success) {
+            statusEl.innerText = "❌ 아이디 또는 비밀번호가 올바르지 않습니다.";
             return;
         }
-        USER_TOKEN = data.data.accessToken;
+
+        // ✅ 관리자 진입
+        if (isAdminGate) {
+            window.location.href = loginData.redirect;
+            return;
+        }
+
+        // ✅ 일반 로그인 (기존 로직)
+        const USER_TOKEN = loginData.data.accessToken;
         localStorage.setItem("USER_TOKEN", USER_TOKEN);
         localStorage.setItem("USER_ID", USER_ID);
+
         statusEl.innerText = "✅ 로그인 성공! 페이지 이동 중...";
-        setTimeout(() => { window.location.href = "main.html"; }, 1000);
+        setTimeout(() => {
+            window.location.href = "main.html";
+        }, 1000);
+
     } catch (error) {
+        statusEl.innerText = "❌ 서버 오류가 발생했습니다.";
         console.error("로그인 오류:", error);
-        statusEl.innerText = "❌ Worker 로그인 요청 실패";
     }
 }
 
+
 function logout() {
-    localStorage.removeItem("USER_TOKEN");
     localStorage.removeItem("USER_ID");
     localStorage.removeItem("USER_PW");
-    window.location.href = "index.html";
+    window.location.href = "index.html"; // 로그아웃 후 로그인 페이지로 이동
 }
 
 function goToMyInfo() {
@@ -156,49 +201,49 @@ async function getUserInfo() {
     }
 
     try {
-        const response = await fetch(`${WORKER_API_URL}/api/my-seat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json;charset=UTF-8" },
-            body: JSON.stringify({ token: USER_TOKEN, loginId: localStorage.getItem("USER_ID") })
-        });
-        if (!response.ok) throw new Error(`내 좌석 조회 실패: ${response.status}`);
+        let userId = localStorage.getItem("USER_ID"); // ✅ 사용자 ID 가져오기
 
-        const data = await readJsonSafely(response);
+        let response = await fetch("https://login-proxy-server.onrender.com/api/my-seat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ 
+                token: USER_TOKEN,
+                loginId: userId //사용자 ID 백엔드로 전달 
+            })
+        });
+
+        let data = await response.json();
 
         if (data.success && data.data.totalCount > 0) {
-            const reservation = data.data.list[0];
+            let reservation = data.data.list[0]; // 첫 번째 예약 정보 가져오기
+            myReservationId = reservation.id;  // ✅ 배석 해제용 ID 저장
+            seatNumber = reservation.seat.id;  // ✅ 실제 API에 사용되는 seatId (숫자)
 
-            myReservationId = reservation.id;
-            seatNumber = reservation.seat.id;
+            
+            
+            document.getElementById("userSeat").innerText = `좌석 ${reservation.seat.code} (${reservation.room.name})`;
 
-            document.getElementById("userSeat").innerText =
-                `좌석 ${reservation.seat.code} (${reservation.room.name})`;
-
-            const now = new Date();
-            const endTime = new Date(reservation.endTime);
-            const remainingMinutes = Math.floor((endTime - now) / (1000 * 60));
+            let now = new Date();
+            let endTime = new Date(reservation.endTime);
+            let remainingMinutes = Math.floor((endTime - now) / (1000 * 60));
 
             document.getElementById("remainingTime").innerText = remainingMinutes > 0
                 ? `${Math.floor(remainingMinutes / 60)}시간 ${remainingMinutes % 60}분 남음`
                 : "시간 종료됨";
 
             if (reservation.renewableDate) {
-                const renewTime = new Date(reservation.renewableDate);
-                const renewHours = renewTime.getHours().toString().padStart(2, "0");
-                const renewMinutes = renewTime.getMinutes().toString().padStart(2, "0");
-
-                document.getElementById("renewTime").innerText =
-                    `${renewHours}:${renewMinutes}부터 연장 가능`;
+                let renewTime = new Date(reservation.renewableDate);
+                let renewHours = renewTime.getHours().toString().padStart(2, '0');
+                let renewMinutes = renewTime.getMinutes().toString().padStart(2, '0');
+                document.getElementById("renewTime").innerText = `${renewHours}:${renewMinutes}부터 연장 가능`;
             } else {
                 document.getElementById("renewTime").innerText = "연장 불가";
             }
 
-            if (
-                typeof reservation.renewalLimit !== "undefined" &&
-                typeof reservation.renewableCnt !== "undefined"
-            ) {
-                document.getElementById("renewalCount").innerText =
-                    `${reservation.renewableCnt}회 / 총 ${reservation.renewalLimit}회`;
+            if (typeof reservation.renewalLimit !== "undefined" && typeof reservation.renewableCnt !== "undefined") {
+                document.getElementById("renewalCount").innerText = `${reservation.renewableCnt}회 / 총 ${reservation.renewalLimit}회`;
             } else {
                 document.getElementById("renewalCount").innerText = "정보 없음";
             }
@@ -207,24 +252,15 @@ async function getUserInfo() {
             document.getElementById("userSeat").innerText = "예약 없음";
             document.getElementById("remainingTime").innerText = "-";
             document.getElementById("renewTime").innerText = "-";
-
-            const renewalCountEl = document.getElementById("renewalCount");
-            if (renewalCountEl) {
-                renewalCountEl.innerText = "-";
-            }
-
-            myReservationId = null;
-            seatNumber = null;
+            myReservationId = null;  // ✅ 예약이 없으면 null 값 설정
         }
 
     } catch (error) {
         document.getElementById("userSeat").innerText = "오류 발생!";
         document.getElementById("remainingTime").innerText = "-";
         document.getElementById("renewTime").innerText = "-";
-
-        console.error("내 정보 조회 오류:", error);
     }
-
+    // 
     fetchQRCode();
 }
 
@@ -239,13 +275,13 @@ document.addEventListener("DOMContentLoaded", function () {
 // 
 async function reserveSpecificSeat(seatId) {
     try {
-        let response = await fetch(`${WORKER_API_URL}/api/reserve-seat`, {
+        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
-            body: JSON.stringify({ token: USER_TOKEN, seatId: seatId })
+            body: JSON.stringify({ seatId: seatId, smufMethodCode: "MOBILE" })
         });
 
         let reserveData = await response.json();
@@ -261,19 +297,19 @@ async function reserveSpecificSeat(seatId) {
         }
     } catch (error) {
         document.getElementById("status").innerText = "❌ 예약 오류 발생!";
-        alert(`❌ 예약 오류: ${error.message}`);
+        alert(`❌ 예약 실패: ${reserveData.message}`);
     }
 }
 
 async function reserveSpecificSeat_2(seatId) {
     try {
-        let response = await fetch(`${WORKER_API_URL}/api/reserve-seat`, {
+        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
-            body: JSON.stringify({ token: USER_TOKEN, seatId: parseInt(seatId) + 2607 })
+            body: JSON.stringify({ seatId: parseInt(seatId) + 2607, smufMethodCode: "MOBILE" })
 
         });
         //안녕하세요
@@ -291,20 +327,20 @@ async function reserveSpecificSeat_2(seatId) {
         }
     } catch (error) {
         document.getElementById("status").innerText = "❌ 예약 오류 발생!";
-        alert(`❌ 예약 오류: ${error.message}`);
+        alert(`❌ 예약 실패: ${reserveData.message}`);
         
     }
 }
 
 async function reserveSpecificSeat_3(seatId) {
     try {
-        let response = await fetch(`${WORKER_API_URL}/api/reserve-seat`, {
+        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
-            body: JSON.stringify({ token: USER_TOKEN, seatId: parseInt(seatId) + 2729 })
+            body: JSON.stringify({ seatId: parseInt(seatId) + 2729, smufMethodCode: "MOBILE" })
 
         });
 
@@ -320,67 +356,42 @@ async function reserveSpecificSeat_3(seatId) {
         }
     } catch (error) {
         document.getElementById("status").innerText = "❌ 예약 오류 발생!";
-        alert(`❌ 예약 오류: ${error.message}`);
+        alert(`❌ 예약 실패: ${reserveData.message}`);
     }
 }
 
 
 async function findAndReserveSeat() {
     stopFlag = false;
-
-    // ✅ 1열 A구역 + B구역
-    const ROOM_IDS = [102, 101];
-
     while (!stopFlag) {
-        document.getElementById("status").innerText = "🔄 1열 A/B구역 빈자리 탐색 중...";
+        document.getElementById("status").innerText = "🔄 빈자리 탐색 중...";
+        //alert("🔄무한 루프 시작(취소하려면 예약중지 버튼을 눌러주세요)");
 
         try {
-            let availableSeats = [];
-
-            // ✅ 102, 101 두 구역 모두 조회
-            for (const ROOM_ID of ROOM_IDS) {
-                const response = await fetch(`${WORKER_API_URL}/api/seats?roomId=${ROOM_ID}`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json;charset=UTF-8",
-                        "pyxis-auth-token": USER_TOKEN
-                    }
-                });
-
-                if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
-                const data = await response.json();
-                if (data.testMode) throw new Error("테스트 좌석 데이터로 자동 예약할 수 없습니다.");
-
-                if (data.success && data.data && Array.isArray(data.data.list)) {
-                    const roomAvailableSeats = data.data.list
-                        .filter(seat => !seat.isOccupied && seat.isActive)
-                        .map(seat => ({
-                            ...seat,
-                            roomId: ROOM_ID
-                        }));
-
-                    availableSeats.push(...roomAvailableSeats);
+            let response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+                method: "GET",
+                headers: { 
+                    "Content-Type": "application/json;charset=UTF-8",
+                    "pyxis-auth-token": USER_TOKEN
                 }
-            }
+            });
 
+            let data = await response.json();
+            let availableSeats = data.data.list.filter(seat => !seat.isOccupied && seat.isActive);
+            
             if (availableSeats.length === 0) {
-                document.getElementById("status").innerText = "🔄 1열 A/B구역 빈자리 없음, 다시 탐색 중...";
-                await new Promise(resolve => setTimeout(resolve, 10000));
+                document.getElementById("status").innerText = "🔄 빈자리 없음, 다시 탐색 중...";
+                await new Promise(resolve => setTimeout(resolve, 200));//빈자리탐색 .5초로 바꿈
                 continue;
             }
 
-            // ✅ 102에서 먼저 찾고, 없으면 101에서 찾은 좌석 예약
-            const targetSeat = availableSeats[0];
+            let targetSeat = availableSeats[0];
+            document.getElementById("status").innerText = `🎯 빈자리 발견! 좌석 ${targetSeat.id} 예약 시도...`;
 
-            document.getElementById("status").innerText =
-                `🎯 빈자리 발견! Room ${targetSeat.roomId}, 좌석 ${targetSeat.code}번 예약 시도...`;
-
-            // ✅ 예약은 seat.code가 아니라 실제 seat.id로 해야 함
             await reserveSpecificSeat(targetSeat.id);
-
+            
         } catch (error) {
-            document.getElementById("status").innerText = "❌ 1열 무한루프 오류 발생!";
-            console.error("1열 무한루프 오류:", error);
+            document.getElementById("status").innerText = "❌ 오류 발생!";
         }
 
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -394,7 +405,7 @@ async function findAndReserveSeat2() {
         //alert("🔄무한 루프 시작(취소하려면 예약중지 버튼을 눌러주세요)");
 
         try {
-            let response = await fetch(`${WORKER_API_URL}/api/seats?roomId=${232}`, {
+            let response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${232}/seats`, {
                 method: "GET",
                 headers: { 
                     "Content-Type": "application/json;charset=UTF-8",
@@ -402,15 +413,12 @@ async function findAndReserveSeat2() {
                 }
             });
 
-            if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
             let data = await response.json();
-            if (data.testMode) throw new Error("테스트 좌석 데이터입니다.");
-            if (!Array.isArray(data.data?.list)) throw new Error("좌석 응답 오류");
             let availableSeats = data.data.list.filter(seat => !seat.isOccupied && seat.isActive);
 
             if (availableSeats.length === 0) {
                 document.getElementById("status").innerText = "🔄 빈자리 없음, 다시 탐색 중...";
-                await new Promise(resolve => setTimeout(resolve, 10000));//빈자리탐색 .5초로 바꿈
+                await new Promise(resolve => setTimeout(resolve, 200));//빈자리탐색 .5초로 바꿈
                 continue;
             }
 
@@ -437,28 +445,32 @@ function stopLoop() {
 
 async function confirmSeat(reservationId, seatId) {
     try {
-        const response = await fetch(`${WORKER_API_URL}/api/confirm-seat`, {
-            method: "POST", headers: schoolAuthHeaders(),
-            body: JSON.stringify({ token: localStorage.getItem("USER_TOKEN"), reservationId, seatId, loginId: localStorage.getItem("USER_ID") })
+        let userId = localStorage.getItem("USER_ID"); // ✅ 사용자 ID 가져오기
+
+        let response = await fetch("https://login-proxy-server.onrender.com/api/confirm-seat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                token: USER_TOKEN,
+                reservationId: reservationId,
+                seatId: seatId,
+                loginId: userId //사용자 ID 백엔드로 전달
+            })
         });
 
-        const data = await readJsonSafely(response);
+        let data = await response.json();
 
         if (data.success) {
             alert(`✅ 좌석 ${seatId}번 배석 확정 완료!`);
-            document.getElementById("status").innerText =
-                `✅ 좌석 ${seatId}번 배석 확정 완료!`;
+            document.getElementById("status").innerText = `✅ 좌석 ${seatId}번 배석 확정 완료!`;
             stopFlag = true;
         } else {
             alert(`❌ 배석 확정 실패: ${data.message}`);
-            document.getElementById("status").innerText =
-                `❌ 배석 확정 실패: ${data.message}`;
+            document.getElementById("status").innerText = `❌ 배석 확정 실패: ${data.message}`;
             stopFlag = true;
         }
-
     } catch (error) {
         document.getElementById("status").innerText = "❌ 배석 확정 오류 발생!";
-        console.error("배석 확정 오류:", error);
         stopFlag = true;
     }
 }
@@ -479,15 +491,14 @@ async function cancelReservation() {
     }
 
     try {
-        let response = await fetch(`${WORKER_API_URL}/api/cancel-seat`, {
+        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-discharges", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
             body: JSON.stringify({
-                "token": USER_TOKEN,
-                "reservationId": myReservationId,  // ✅ 예약된 좌석 ID
+                "seatCharge": myReservationId,  // ✅ 예약된 좌석 ID
                 "smufMethodCode": "MOBILE"  // ✅ 모바일에서 해제 요청
             })
         });
@@ -519,26 +530,31 @@ async function renewSeat() {
         document.getElementById("renewStatus").innerText = "❌ 연장할 좌석 예약이 없습니다.";
         return;
     }
-
+    let userId = localStorage.getItem("USER_ID"); // ✅ 사용자 ID 가져오기
     try {
-        const response = await fetch(`${WORKER_API_URL}/api/renew-seat`, {
-            method: "POST", headers: schoolAuthHeaders(),
-            body: JSON.stringify({ token: USER_TOKEN, reservationId: myReservationId, seatId: seatNumber, loginId: localStorage.getItem("USER_ID") })
+        let response = await fetch("https://login-proxy-server.onrender.com/api/renew-seat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                token: USER_TOKEN,
+                reservationId: myReservationId,
+                seatId: seatNumber,
+                loginId: userId //사용자 ID 백엔드로 전달
+            })
         });
 
-        const data = await readJsonSafely(response);
+        let data = await response.json();
 
         if (data.success) {
             document.getElementById("renewStatus").innerText = "✅ 좌석이 연장되었습니다!";
-            getUserInfo();
+            getUserInfo(); // 다시 정보 불러오기
         } else {
-            document.getElementById("renewStatus").innerText =
-                `❌ 연장 실패: ${data.message}`;
+            document.getElementById("renewStatus").innerText = `❌ 연장 실패: ${data.message}`;
         }
-
     } catch (error) {
         document.getElementById("renewStatus").innerText = "❌ 연장 오류 발생!";
-        console.error("좌석 연장 오류:", error);
     }
 }
 
@@ -559,7 +575,7 @@ async function fetchSeatStatus() {
 
     try {
         for (let ROOM_ID of ROOM_IDS) {
-            let response = await fetch(`${WORKER_API_URL}/api/seats?roomId=${ROOM_ID}`, {
+            let response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json;charset=UTF-8",
@@ -567,10 +583,7 @@ async function fetchSeatStatus() {
                 }
             });
 
-            if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
             let data = await response.json();
-            if (data.testMode) throw new Error("테스트 좌석 데이터입니다.");
-            if (!Array.isArray(data.data?.list)) throw new Error("좌석 응답 오류");
             let seats = data.data.list;
 
             // ✅ 칸막이석 필터링 (24~114번 좌석)
@@ -613,15 +626,14 @@ async function magicRebook() {
 
     try {
         // 🔴 먼저 배석 해제
-        const cancelResponse = await fetch(`${WORKER_API_URL}/api/cancel-seat`, {
+        const cancelResponse = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-discharges", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
                 "pyxis-auth-token": USER_TOKEN
             },
             body: JSON.stringify({
-                token: USER_TOKEN,
-                reservationId: myReservationId,
+                seatCharge: myReservationId,
                 smufMethodCode: "MOBILE"
             })
         });
@@ -688,7 +700,7 @@ async function fetchQRCode() {
     }
 
     try {
-        let response = await fetch(`${WORKER_API_URL}/api/membership-card`, {
+        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/my-membership-card?type=qrcode", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
@@ -738,7 +750,7 @@ async function fetchSoonToBeAvailableSeats() {
 
     try {
         await Promise.all(ROOM_IDS.map(async (ROOM_ID) => {
-            const response = await fetch(`${WORKER_API_URL}/api/seats?roomId=${ROOM_ID}`, {
+            const response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json;charset=UTF-8",
@@ -746,10 +758,8 @@ async function fetchSoonToBeAvailableSeats() {
                 }
             });
 
-            if (!response.ok) throw new Error(`좌석 API 오류: ${response.status}`);
             const data = await response.json();
-            if (data.testMode) throw new Error("테스트 좌석 데이터입니다.");
-            if (data.success && Array.isArray(data.data?.list)) {
+            if (data.success && data.data.list) {
                 const seats = data.data.list;
                 // ✅ 칸막이석 필터링: 24~131번
                 const cubicleSeatCodes = seats

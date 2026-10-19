@@ -13,7 +13,7 @@ async function fetchQRCode() {
     }
 
     try {
-        let response = await fetch("https://library.konkuk.ac.kr/pyxis-api/1/api/my-membership-card?type=qrcode", {
+        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/my-membership-card?type=qrcode", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
