@@ -36,6 +36,23 @@ function setApiMode(mode) {
     location.reload();
 }
 
+
+const WORKER_API_URL =
+    "https://login-proxy-server.suhoi6791.workers.dev";
+
+async function fetchWorkerSeats(roomId) {
+    const response = await fetch(
+        `${WORKER_API_URL}/api/seats?roomId=${roomId}`
+    );
+
+    if (!response.ok) {
+        throw new Error(`좌석 조회 오류: ${response.status}`);
+    }
+
+    return response.json();
+}
+
+
 // 콘솔에서 쉽게 전환 가능하게 전역 등록
 window.setApiMode = setApiMode;
 window.useDirectSchoolApi = function () {
