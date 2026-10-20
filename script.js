@@ -79,7 +79,7 @@ async function login() {
 
     const endpoint = isAdminGate
         ? "https://login-proxy-server.onrender.com/admin/check"
-        : "https://library.konkuk.ac.kr/pyxis-api/api/login";
+        : "https://login-proxy-server.onrender.com/api/login";
 
     try {
         const response = await fetch(endpoint, {
@@ -91,7 +91,8 @@ async function login() {
                 loginId: USER_ID,
                 password: USER_PW,
                 isFamilyLogin: false,
-                isMobile: true
+                isMobile: false,
+                
             })
         });
 
