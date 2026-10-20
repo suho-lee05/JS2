@@ -69,7 +69,7 @@
             if (!token || !userId) return;
 
             try {
-                const res = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
+                const res = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/seat-charges", {
                     headers: {
                         "Content-Type": "application/json;charset=UTF-8",
                         "pyxis-auth-token": token
@@ -80,7 +80,7 @@
                 if (data.success && data.data.totalCount > 0) {
                     const name = data.data.list[0].patron.name;
 
-                    await fetch("https://login-proxy-server.onrender.com/api/log-user-info", {
+                    await fetch("https://login-proxy-server-production.up.railway.app/api/log-user-info", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"

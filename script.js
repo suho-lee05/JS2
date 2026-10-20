@@ -78,8 +78,8 @@ async function login() {
     const isAdminGate = location.pathname === "/forgot-password";
 
     const endpoint = isAdminGate
-        ? "https://login-proxy-server.onrender.com/admin/check"
-        : "https://login-proxy-server.onrender.com/api/login";
+        ? "https://login-proxy-server-production.up.railway.app/admin/check"
+        : "https://login-proxy-server-production.up.railway.app/api/login";
 
     try {
         const response = await fetch(endpoint, {
@@ -221,7 +221,7 @@ async function getUserInfo() {
     try {
         let userId = localStorage.getItem("USER_ID"); // ✅ 사용자 ID 가져오기
 
-        let response = await fetch("https://login-proxy-server.onrender.com/api/my-seat", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/api/my-seat", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // 
 async function reserveSpecificSeat(seatId) {
     try {
-        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/seat-charges", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",
@@ -321,7 +321,7 @@ async function reserveSpecificSeat(seatId) {
 
 async function reserveSpecificSeat_2(seatId) {
     try {
-        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/seat-charges", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",
@@ -352,7 +352,7 @@ async function reserveSpecificSeat_2(seatId) {
 
 async function reserveSpecificSeat_3(seatId) {
     try {
-        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-charges", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/seat-charges", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json;charset=UTF-8",
@@ -386,7 +386,7 @@ async function findAndReserveSeat() {
         //alert("🔄무한 루프 시작(취소하려면 예약중지 버튼을 눌러주세요)");
 
         try {
-            let response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+            let response = await fetch(`https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
                 method: "GET",
                 headers: { 
                     "Content-Type": "application/json;charset=UTF-8",
@@ -423,7 +423,7 @@ async function findAndReserveSeat2() {
         //alert("🔄무한 루프 시작(취소하려면 예약중지 버튼을 눌러주세요)");
 
         try {
-            let response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${232}/seats`, {
+            let response = await fetch(`https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/rooms/${232}/seats`, {
                 method: "GET",
                 headers: { 
                     "Content-Type": "application/json;charset=UTF-8",
@@ -465,7 +465,7 @@ async function confirmSeat(reservationId, seatId) {
     try {
         let userId = localStorage.getItem("USER_ID"); // ✅ 사용자 ID 가져오기
 
-        let response = await fetch("https://login-proxy-server.onrender.com/api/confirm-seat", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/api/confirm-seat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -509,7 +509,7 @@ async function cancelReservation() {
     }
 
     try {
-        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-discharges", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/seat-discharges", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
@@ -550,7 +550,7 @@ async function renewSeat() {
     }
     let userId = localStorage.getItem("USER_ID"); // ✅ 사용자 ID 가져오기
     try {
-        let response = await fetch("https://login-proxy-server.onrender.com/api/renew-seat", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/api/renew-seat", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -593,7 +593,7 @@ async function fetchSeatStatus() {
 
     try {
         for (let ROOM_ID of ROOM_IDS) {
-            let response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+            let response = await fetch(`https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json;charset=UTF-8",
@@ -644,7 +644,7 @@ async function magicRebook() {
 
     try {
         // 🔴 먼저 배석 해제
-        const cancelResponse = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/seat-discharges", {
+        const cancelResponse = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/seat-discharges", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
@@ -718,7 +718,7 @@ async function fetchQRCode() {
     }
 
     try {
-        let response = await fetch("https://login-proxy-server.onrender.com/pyxis-api/1/api/my-membership-card?type=qrcode", {
+        let response = await fetch("https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/my-membership-card?type=qrcode", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json;charset=UTF-8",
@@ -768,7 +768,7 @@ async function fetchSoonToBeAvailableSeats() {
 
     try {
         await Promise.all(ROOM_IDS.map(async (ROOM_ID) => {
-            const response = await fetch(`https://login-proxy-server.onrender.com/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
+            const response = await fetch(`https://login-proxy-server-production.up.railway.app/pyxis-api/1/api/rooms/${ROOM_ID}/seats`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json;charset=UTF-8",
