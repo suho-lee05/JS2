@@ -75,59 +75,71 @@ async function login() {
         return;
     }
 
-    // 🔥 관리자 진입 여부
     const isAdminGate = location.pathname === "/forgot-password";
 
-    // 🔀 endpoint 분기
-    //const endpoint = isAdminGate
-        //? "https://login-proxy-server.onrender.com/admin/check"
-        //: "https://login-proxy-server.onrender.com/api/login";
     const endpoint = isAdminGate
-    ? "https://login-proxy-server.onrender.com/admin/check"
-    : "https://library.konkuk.ac.kr/pyxis-api/api/login";
-    
+        ? "https://login-proxy-server.onrender.com/admin/check"
+        : "https://library.konkuk.ac.kr/pyxis-api/api/login";
+
     try {
         const response = await fetch(endpoint, {
             method: "POST",
-            headers: { "Content-Type": "application/json;charset=UTF-8" },
+            headers: {
+                "Content-Type": "application/json;charset=UTF-8"
+            },
             body: JSON.stringify({
-    loginId: USER_ID,
-    password: USER_PW,
-    isFamilyLogin: false,
-    isMobile: true
-})
+                loginId: USER_ID,
+                password: USER_PW,
+                isFamilyLogin: false,
+                isMobile: true
+            })
         });
 
-        const loginData = await response.json();
+        console.log("로그인 HTTP 상태:", response.status);
+        console.log("응답 Content-Type:", response.headers.get("content-type"));
 
-        // ❌ 공통 실패 처리
-        if (!response.ok || !loginData.success) {
-            statusEl.innerText = "❌ 아이디 또는 비밀번호가 올바르지 않습니다.";
+        const responseText = await response.text();
+
+        let loginData;
+
+        try {
+            loginData = JSON.parse(responseText);
+        } catch (error) {
+            statusEl.innerText = `❌ 로그인 API 응답 오류 (HTTP ${response.status})`;
             return;
         }
 
-        // ✅ 관리자 진입
+        if (!response.ok || !loginData.success) {
+            statusEl.innerText = `❌ 로그인 실패: ${loginData.message || response.status}`;
+            return;
+        }
+
         if (isAdminGate) {
             window.location.href = loginData.redirect;
             return;
         }
 
-        // ✅ 일반 로그인 (기존 로직)
-        const USER_TOKEN = loginData.data.accessToken;
+        USER_TOKEN = loginData.data.accessToken;
+
+        if (!USER_TOKEN) {
+            statusEl.innerText = "❌ 로그인 토큰 발급 실패";
+            return;
+        }
+
         localStorage.setItem("USER_TOKEN", USER_TOKEN);
         localStorage.setItem("USER_ID", USER_ID);
 
         statusEl.innerText = "✅ 로그인 성공! 페이지 이동 중...";
+
         setTimeout(() => {
             window.location.href = "main.html";
         }, 1000);
 
     } catch (error) {
-        statusEl.innerText = "❌ 서버 오류가 발생했습니다.";
+        statusEl.innerText = "❌ 로그인 요청 실패 (네트워크 또는 CORS 오류)";
         console.error("로그인 오류:", error);
     }
 }
-
 
 function logout() {
     localStorage.removeItem("USER_ID");
