@@ -79,18 +79,23 @@ async function login() {
     const isAdminGate = location.pathname === "/forgot-password";
 
     // 🔀 endpoint 분기
+    //const endpoint = isAdminGate
+        //? "https://login-proxy-server.onrender.com/admin/check"
+        //: "https://login-proxy-server.onrender.com/api/login";
     const endpoint = isAdminGate
-        ? "https://login-proxy-server.onrender.com/admin/check"
-        : "https://login-proxy-server.onrender.com/api/login";
-
+    ? "https://login-proxy-server.onrender.com/admin/check"
+    : "https://library.konkuk.ac.kr/pyxis-api/api/login";
+    
     try {
         const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json;charset=UTF-8" },
             body: JSON.stringify({
-                loginId: USER_ID,
-                password: USER_PW
-            })
+    loginId: USER_ID,
+    password: USER_PW,
+    isFamilyLogin: false,
+    isMobile: true
+})
         });
 
         const loginData = await response.json();
