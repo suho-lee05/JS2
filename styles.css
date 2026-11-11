@@ -483,3 +483,43 @@ footer {
     color: #ffe9b5;
   }
 }
+
+body:has(form), body:has(.app-shell > .card) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body:has(.app-shell > .card) .app-shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0;
+  padding: 24px;
+}
+
+/* 로그인 카드 전용 스타일 보강 */
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(22, 31, 50, 0.85); /* 다크 모드 기준 반투명 */
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  padding: 32px;
+  border-radius: 24px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-header .chip {
+  margin-bottom: 12px;
+}
+
+.login-header h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
