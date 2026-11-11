@@ -484,6 +484,10 @@ async function confirmSeat(reservationId, seatId) {
             alert(`✅ 좌석 ${seatId}번 배석 확정 완료!`);
             document.getElementById("status").innerText = `✅ 좌석 ${seatId}번 배석 확정 완료!`;
             stopFlag = true;
+            // 🚀 성공 시 1초 후 myinfo.html로 리다이렉션
+            setTimeout(() => {
+                window.location.href = "myinfo.html";
+            }, 100);
         } else {
             alert(`❌ 배석 확정 실패: ${data.message}`);
             document.getElementById("status").innerText = `❌ 배석 확정 실패: ${data.message}`;
